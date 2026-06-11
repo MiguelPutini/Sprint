@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>EV Charge SP — Minhas Reservas</title>
+  <meta name="description" content="Gerencie seus agendamentos de recarga no EV Charge SP."/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<div class="bg-grid"></div><div class="bg-glow"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="/dashboard" class="navbar-brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    EV Charge SP
+  </a>
+  <div class="navbar-links">
+    <a href="/dashboard">Nova Recarga</a>
+    <a href="/perfil">Meu Perfil</a>
+    <a href="/ia">IA Assistente</a>
+    <a href="/reservas" class="active">Minhas Reservas</a>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Sair</button>
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile overlay + menu -->
+<div class="nav-overlay" id="navOverlay"></div>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="/dashboard">⚡ Nova Recarga</a>
+  <a href="/perfil">👤 Meu Perfil</a>
+  <a href="/ia">🤖 IA Assistente</a>
+  <a href="/reservas" class="active">📅 Minhas Reservas</a>
+  <div class="mobile-divider"></div>
+  <button class="btn btn-ghost" onclick="logout()" style="width:100%;justify-content:flex-start;padding:0.9rem 1.25rem;">🚪 Sair</button>
+</div>
+
+<main class="main">
+  <div class="container">
+    <header style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:2rem;">
+      <div>
+        <h1 style="font-size:1.7rem;display:flex;align-items:center;gap:0.5rem;">📅 Minhas Reservas</h1>
+        <p class="text-muted" style="margin-top:0.35rem;font-size:0.9rem;">Gerencie seus agendamentos ativos e cancelamentos.</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="simulateNoShowCheck()" style="border:1px dashed var(--danger); color:var(--danger); flex-shrink:0;">
+        🛠️ Debug: Simular No-Show
+      </button>
+    </header>
+
+    <div class="card" style="margin-bottom: 2rem;">
+      <div class="card-title"><span>📋</span> Reservas Ativas</div>
+      <div id="reservationsList" class="reservations-container">
+        <div class="loading-spinner">Carregando agendamentos...</div>
+      </div>
+    </div>
+
+    <div class="alert alert-info">
+      <strong>ℹ️ Política de Reserva:</strong> As reservas são gratuitas. No entanto, se você não comparecer e não cancelar com antecedência, uma taxa equivalente ao custo de uma recarga média será descontada do seu saldo.
+    </div>
+  </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+<script src="{{ url_for('static', filename='js/reservas.js') }}"></script>
+</body>
+</html>

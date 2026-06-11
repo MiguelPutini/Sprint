@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>EV Charge SP — Nova Recarga</title>
+  <meta name="description" content="Reserve sua vaga e inicie uma recarga inteligente em São Paulo."/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="/dashboard" class="navbar-brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+    </svg>
+    EV Charge SP
+  </a>
+
+  <!-- Desktop links -->
+  <div class="navbar-links">
+    <a href="/dashboard" class="active">Nova Recarga</a>
+    <a href="/perfil">Meu Perfil</a>
+    <a href="/ia">IA Assistente</a>
+    <a href="/reservas">Minhas Reservas</a>
+    <span id="navPlan" class="badge-plan hidden"></span>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Sair</button>
+  </div>
+
+  <!-- Hamburger -->
+  <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile overlay + menu -->
+<div class="nav-overlay" id="navOverlay"></div>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="/dashboard" class="active">⚡ Nova Recarga</a>
+  <a href="/perfil">👤 Meu Perfil</a>
+  <a href="/ia">🤖 IA Assistente</a>
+  <a href="/reservas">📅 Minhas Reservas</a>
+  <div class="mobile-divider"></div>
+  <button class="btn btn-ghost" onclick="logout()" style="width:100%;justify-content:flex-start;padding:0.9rem 1.25rem;">🚪 Sair</button>
+</div>
+
+<main class="main">
+  <div class="container">
+    <div class="page-header">
+      <h1>⚡ Nova Recarga</h1>
+      <p>Escolha seu plano, região e vaga para iniciar</p>
+    </div>
+
+    <!-- STEP INDICATOR -->
+    <div class="steps mb-2" id="stepsBar">
+      <div class="step active" id="s1"><div class="step-num">1</div><span class="step-label">Plano</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="s2"><div class="step-num">2</div><span class="step-label">Região</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="s3"><div class="step-num">3</div><span class="step-label">Vaga</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="s4"><div class="step-num">4</div><span class="step-label">Confirmar</span></div>
+    </div>
+
+    <div id="dashAlert" class="hidden"></div>
+
+    <!-- STEP 1: PLANO -->
+    <div id="stepPlano">
+      <div class="card">
+        <div class="card-title"><span>📋</span> Escolha seu Plano</div>
+        <p class="text-muted mb-2">Seu plano determina a potência máxima de carregamento.</p>
+        <div class="plan-grid" id="planGrid">
+          <div class="plan-card" onclick="selectPlan('Básico',7,50)" id="plan-basico">
+            <div class="plan-icon">🔋</div>
+            <div class="plan-name">Básico</div>
+            <div class="plan-power">7 kW</div>
+            <div class="plan-price">R$ 50 / mês</div>
+          </div>
+          <div class="plan-card" onclick="selectPlan('Intermediário',11,100)" id="plan-inter">
+            <div class="plan-icon">⚡</div>
+            <div class="plan-name">Intermediário</div>
+            <div class="plan-power">11 kW</div>
+            <div class="plan-price">R$ 100 / mês</div>
+          </div>
+          <div class="plan-card" onclick="selectPlan('Premium',22,200)" id="plan-premium">
+            <div class="plan-icon">🚀</div>
+            <div class="plan-name">Premium</div>
+            <div class="plan-power">22 kW</div>
+            <div class="plan-price">R$ 200 / mês</div>
+          </div>
+        </div>
+        <div class="mt-3">
+          <button class="btn btn-primary btn-lg btn-full" onclick="goToStep(2)" id="btnNextPlan" disabled>
+            Continuar →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: REGIÃO & LOCAL -->
+    <div id="stepRegiao" class="hidden">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span>🗺️</span> Região</div>
+          <div class="form-group">
+            <label for="selectRegiao">Selecione a zona</label>
+            <select id="selectRegiao" onchange="loadLocals()">
+              <option value="">— Escolha —</option>
+              <option value="Zona Sul">Zona Sul</option>
+              <option value="Zona Leste">Zona Leste</option>
+              <option value="Zona Oeste">Zona Oeste</option>
+              <option value="Zona Norte">Zona Norte</option>
+            </select>
+          </div>
+          <div class="form-group hidden" id="localGroup">
+            <label for="selectLocal">Selecione o local</label>
+            <select id="selectLocal" onchange="localSelected()">
+              <option value="">— Escolha —</option>
+            </select>
+          </div>
+          <div id="localAddr" class="text-muted mt-1" style="font-size:0.82rem;"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>⏱️</span> Agendamento</div>
+          <div class="form-group">
+            <label for="inputData">Dia da Reserva</label>
+            <input type="date" id="inputData" />
+          </div>
+          <div class="form-group">
+            <label for="inputHora">Horário</label>
+            <input type="time" id="inputHora" />
+          </div>
+          <div class="form-group">
+            <label for="inputTempo">Duração prevista (minutos)</label>
+            <input type="number" id="inputTempo" value="30" min="10" max="240" step="5"/>
+          </div>
+          <div id="tempoInfo" class="card card-sm" style="background:rgba(0,212,170,0.07);border:1px solid rgba(0,212,170,0.2);margin-top:1rem;">
+            <p class="text-muted" style="font-size:0.82rem;">Preencha os dados ao lado para ver o cálculo.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-2 dash-actions" style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="goToStep(1)">← Voltar</button>
+        <button class="btn btn-primary btn-lg" onclick="goToStep(3)" id="btnNextRegiao" disabled>Continuar →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: VAGAS -->
+    <div id="stepVaga" class="hidden">
+      <div class="card">
+        <div class="card-title"><span>🅿️</span> Mapa de Vagas</div>
+        <div style="display:flex;gap:1.5rem;margin-bottom:1rem;font-size:0.82rem;flex-wrap:wrap;">
+          <span><span class="tag tag-green">L</span> Livre</span>
+          <span><span class="tag tag-yellow">R</span> Reservada</span>
+          <span><span class="tag tag-red">O</span> Ocupada</span>
+        </div>
+        <div class="spot-map" id="spotMap">
+          <div class="text-muted">Carregando vagas...</div>
+        </div>
+        <p class="text-muted mt-2" style="font-size:0.82rem;">Clique em uma vaga <span class="tag tag-green">Livre</span> para selecioná-la.</p>
+        <div id="selectedSpotInfo" class="hidden mt-2">
+          <div class="alert alert-success">✅ Vaga <strong id="selectedSpotId"></strong> selecionada!</div>
+        </div>
+      </div>
+      <div class="mt-2 dash-actions" style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="goToStep(2)">← Voltar</button>
+        <button class="btn btn-primary btn-lg" onclick="goToStep(4)" id="btnNextVaga" disabled>Continuar →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: CONFIRMAR -->
+    <div id="stepConfirmar" class="hidden">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span>📋</span> Resumo</div>
+          <div class="tx-list">
+            <div class="tx-item">
+              <div class="tx-info"><div class="tx-desc">Plano</div></div>
+              <div id="confPlano" class="tag tag-green">—</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-info"><div class="tx-desc">Local</div></div>
+              <div id="confLocal" class="tx-desc">—</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-info"><div class="tx-desc">Vaga</div></div>
+              <div id="confVaga" class="tag tag-green">—</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-info"><div class="tx-desc">Tempo</div></div>
+              <div id="confTempo" class="tx-desc">—</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-info"><div class="tx-desc">Energia estimada</div></div>
+              <div id="confEnergia" class="tx-desc">—</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-info"><div class="tx-desc">Custo estimado</div></div>
+              <div id="confCusto" class="tx-amount debit">—</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-info"><div class="tx-desc">Seu saldo</div></div>
+              <div id="confSaldo" class="tx-amount credit">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1rem;">
+          <div class="charging-orb" id="confOrb">⚡</div>
+          <h3>Pronto para carregar?</h3>
+          <p class="text-muted" style="font-size:0.88rem;">Ao iniciar, a vaga será reservada e o valor debitado do seu saldo.</p>
+          <div style="display:flex; flex-direction:column; gap:0.8rem; width:100%;">
+            <button class="btn btn-primary btn-lg" id="btnStartCharging" onclick="startCharging()">
+              🔌 Iniciar Recarga Agora
+            </button>
+            <button class="btn btn-outline btn-lg" id="btnReserve" onclick="createReservation()">
+              📅 Agendar para depois
+            </button>
+            <button class="btn btn-ghost" onclick="goToStep(3)">← Voltar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

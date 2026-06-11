@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>EV Charge SP — IA Assistente</title>
+  <meta name="description" content="Converse com a IA do EV Charge SP sobre seus gastos, recargas e saldo."/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<div class="bg-grid"></div><div class="bg-glow"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="/dashboard" class="navbar-brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    EV Charge SP
+  </a>
+  <div class="navbar-links">
+    <a href="/dashboard">Nova Recarga</a>
+    <a href="/perfil">Meu Perfil</a>
+    <a href="/ia" class="active">IA Assistente</a>
+    <a href="/reservas">Minhas Reservas</a>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Sair</button>
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile overlay + menu -->
+<div class="nav-overlay" id="navOverlay"></div>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="/dashboard">⚡ Nova Recarga</a>
+  <a href="/perfil">👤 Meu Perfil</a>
+  <a href="/ia" class="active">🤖 IA Assistente</a>
+  <a href="/reservas">📅 Minhas Reservas</a>
+  <div class="mobile-divider"></div>
+  <button class="btn btn-ghost" onclick="logout()" style="width:100%;justify-content:flex-start;padding:0.9rem 1.25rem;">🚪 Sair</button>
+</div>
+
+<main class="main" style="height:calc(100dvh - var(--nav-h));display:flex;flex-direction:column;">
+
+  <!-- HEADER BAR -->
+  <div style="padding:0.85rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1rem;background:rgba(7,11,20,0.6);backdrop-filter:blur(12px);flex-wrap:wrap;">
+    <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">🤖</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-weight:700;font-size:1rem;">EV Assistente</div>
+      <div style="display:flex;align-items:center;gap:0.75rem;font-size:0.75rem;flex-wrap:wrap;">
+        <span style="color:var(--primary);">● Online — consultando seu banco de dados</span>
+        <span id="historyBadge" style="background:rgba(255,255,255,0.1);padding:2px 8px;border-radius:12px;font-size:0.7rem;color:var(--text);transition:opacity 0.3s;opacity:0.5;">🧠 Memória: Nova sessão</span>
+      </div>
+    </div>
+    <div style="flex-shrink:0;">
+      <button class="btn btn-ghost btn-sm" onclick="clearChat()">🗑️ Limpar</button>
+    </div>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="chat-messages" id="chatMessages"></div>
+
+  <!-- SUGGESTIONS -->
+  <div class="chat-suggestions" id="chatSuggestions">
+    <button class="suggestion-chip" onclick="sendSuggestion('Quanto eu já gastei?')">💰 Quanto gastei?</button>
+    <button class="suggestion-chip" onclick="sendSuggestion('Qual meu saldo?')">💳 Meu saldo</button>
+    <button class="suggestion-chip" onclick="sendSuggestion('Quantas recargas fiz?')">⚡ Qtd. recargas</button>
+    <button class="suggestion-chip" onclick="sendSuggestion('Histórico de recargas')">📊 Histórico</button>
+    <button class="suggestion-chip" onclick="sendSuggestion('Qual meu plano?')">📋 Meu plano</button>
+    <button class="suggestion-chip" onclick="sendSuggestion('Última recarga')">🕐 Última recarga</button>
+    <button class="suggestion-chip" onclick="sendSuggestion('Resumo da conta')">📈 Resumo</button>
+  </div>
+
+  <!-- INPUT BAR -->
+  <div class="chat-input-bar">
+    <input type="text" id="chatInput" placeholder="Pergunte sobre seus gastos, recargas, saldo..." onkeydown="handleKey(event)"/>
+    <button class="btn btn-primary" id="btnSend" onclick="sendMessage()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <span class="btn-text">Enviar</span>
+    </button>
+  </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ia.js') }}"></script>
+</body>
+</html>

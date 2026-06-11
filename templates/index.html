@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>EV Charge SP — Login</title>
+  <meta name="description" content="Sistema inteligente de recarga de veículos elétricos em São Paulo."/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<div class="auth-wrapper">
+  <div class="auth-glow-1"></div>
+  <div class="auth-glow-2"></div>
+
+  <div class="auth-card card fade-in">
+    <div class="auth-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
+      EV Charge SP
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs mb-2" id="authTabs">
+      <button class="tab active" id="tabLogin" onclick="switchTab('login')">Entrar</button>
+      <button class="tab" id="tabRegister" onclick="switchTab('register')">Cadastrar</button>
+    </div>
+
+    <!-- ALERT -->
+    <div id="authAlert" class="hidden"></div>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="loginEmail">E-mail</label>
+        <div class="input-wrap">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" id="loginEmail" placeholder="seu@email.com" required/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="loginSenha">Senha</label>
+        <div class="input-wrap">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" id="loginSenha" placeholder="••••••••" required/>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full btn-lg" id="btnLogin">
+        Entrar
+      </button>
+    </form>
+
+    <!-- REGISTER FORM -->
+    <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label for="regNome">Nome completo</label>
+        <div class="input-wrap">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="text" id="regNome" placeholder="João Silva" required/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="regEmail">E-mail</label>
+        <div class="input-wrap">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" id="regEmail" placeholder="seu@email.com" required/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="regSenha">Senha <span class="text-muted">(mín. 6 caracteres)</span></label>
+        <div class="input-wrap">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" id="regSenha" placeholder="••••••••" required minlength="6"/>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full btn-lg" id="btnRegister">
+        Criar Conta
+      </button>
+    </form>
+
+    <p class="text-center text-muted mt-2" style="font-size:0.82rem;">
+      Ao continuar, você concorda com os Termos de Uso do EV Charge SP.
+    </p>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+</body>
+</html>

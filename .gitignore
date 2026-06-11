@@ -1,0 +1,23 @@
+# Credenciais - NUNCA subir ao GitHub
+.env
+entrega_sprint2.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.pyc
+venv/
+env/
+.venv/
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# Excluir outros trabalhos/sprints
+Sprint-de-dados/
+

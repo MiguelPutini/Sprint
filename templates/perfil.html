@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>EV Charge SP — Meu Perfil</title>
+  <meta name="description" content="Gerencie seu perfil, créditos e plano no EV Charge SP."/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<div class="bg-grid"></div><div class="bg-glow"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="/dashboard" class="navbar-brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    EV Charge SP
+  </a>
+  <div class="navbar-links">
+    <a href="/dashboard">Nova Recarga</a>
+    <a href="/perfil" class="active">Meu Perfil</a>
+    <a href="/ia">IA Assistente</a>
+    <a href="/reservas">Minhas Reservas</a>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Sair</button>
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile overlay + menu -->
+<div class="nav-overlay" id="navOverlay"></div>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="/dashboard">⚡ Nova Recarga</a>
+  <a href="/perfil" class="active">👤 Meu Perfil</a>
+  <a href="/ia">🤖 IA Assistente</a>
+  <a href="/reservas">📅 Minhas Reservas</a>
+  <div class="mobile-divider"></div>
+  <button class="btn btn-ghost" onclick="logout()" style="width:100%;justify-content:flex-start;padding:0.9rem 1.25rem;">🚪 Sair</button>
+</div>
+
+<main class="main">
+  <div class="container">
+    <div class="page-header">
+      <h1>👤 Meu Perfil</h1>
+      <p>Gerencie seus créditos, plano e histórico</p>
+    </div>
+    <div id="perfilAlert" class="hidden"></div>
+
+    <!-- STATS -->
+    <div class="stats-grid mb-2" id="statsGrid">
+      <div class="stat-card"><div class="stat-icon">💳</div><div class="stat-value" id="statCredito">—</div><div class="stat-label">Saldo Disponível</div></div>
+      <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value" id="statPlano">—</div><div class="stat-label">Plano Atual</div></div>
+      <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-value" id="statPotencia">—</div><div class="stat-label">Potência Máxima</div></div>
+      <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value" id="statSince">—</div><div class="stat-label">Membro desde</div></div>
+    </div>
+
+    <div class="grid-2">
+      <!-- INFO + CREDITOS -->
+      <div style="display:flex;flex-direction:column;gap:1.5rem;">
+        <!-- Info Card -->
+        <div class="card">
+          <div class="card-title"><span>👤</span> Informações</div>
+          <div class="tx-list">
+            <div class="tx-item">
+              <div class="tx-info"><div class="tx-desc" style="color:var(--muted);font-size:0.8rem;">Nome</div><div class="tx-desc" id="infoNome">—</div></div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-info"><div class="tx-desc" style="color:var(--muted);font-size:0.8rem;">E-mail</div><div class="tx-desc" id="infoEmail">—</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Adicionar Créditos -->
+        <div class="card">
+          <div class="card-title"><span>💳</span> Adicionar Créditos</div>
+          <div class="credit-chips" id="creditChips">
+            <button class="credit-chip" onclick="selectCredit(50)">R$ 50</button>
+            <button class="credit-chip" onclick="selectCredit(100)">R$ 100</button>
+            <button class="credit-chip" onclick="selectCredit(200)">R$ 200</button>
+            <button class="credit-chip" onclick="selectCredit(500)">R$ 500</button>
+          </div>
+          <div class="form-group">
+            <label for="creditValue">Ou digite o valor (R$)</label>
+            <input type="number" id="creditValue" placeholder="0,00" min="5" step="5"/>
+          </div>
+          <button class="btn btn-primary btn-full" id="btnAddCredit" onclick="addCredits()">
+            ➕ Adicionar Créditos
+          </button>
+        </div>
+
+        <!-- Trocar Plano -->
+        <div class="card">
+          <div class="card-title"><span>🔄</span> Alterar Plano</div>
+          <div class="plan-grid" id="perfilPlanGrid">
+            <div class="plan-card" onclick="changePlan('Básico')" id="pp-basico">
+              <div class="plan-icon">🔋</div><div class="plan-name">Básico</div>
+              <div class="plan-power">7 kW</div><div class="plan-price">R$ 50/mês</div>
+            </div>
+            <div class="plan-card" onclick="changePlan('Intermediário')" id="pp-inter">
+              <div class="plan-icon">⚡</div><div class="plan-name">Intermediário</div>
+              <div class="plan-power">11 kW</div><div class="plan-price">R$ 100/mês</div>
+            </div>
+            <div class="plan-card" onclick="changePlan('Premium')" id="pp-premium">
+              <div class="plan-icon">🚀</div><div class="plan-name">Premium</div>
+              <div class="plan-power">22 kW</div><div class="plan-price">R$ 200/mês</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTÓRICO -->
+      <div class="card" style="height:fit-content;">
+        <div class="card-title"><span>📊</span> Histórico de Transações</div>
+        <div class="tx-list" id="txList">
+          <p class="text-muted">Carregando...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+<script src="{{ url_for('static', filename='js/perfil.js') }}"></script>
+</body>
+</html>
