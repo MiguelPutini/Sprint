@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>EV Charge SP — Portal do Operador</title>
+  <meta name="description" content="Acesso ao sistema de gerenciamento de múltiplas sessões de recarga — Sprint 2."/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow" style="background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(108,99,255,0.15) 0%, transparent 70%);"></div>
+
+<div class="auth-wrapper">
+  <div class="auth-glow-1" style="background: radial-gradient(circle, rgba(108,99,255,0.15), transparent 70%);"></div>
+  <div class="auth-glow-2"></div>
+
+  <div class="auth-card card fade-in">
+    <div class="auth-logo" style="flex-direction: column; gap: 6px; margin-bottom: 0.5rem;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          <path d="M12 12v.01"/>
+        </svg>
+        <span style="color: var(--purple);">Portal do Operador</span>
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);font-weight:400;letter-spacing:0.05em;">EV CHARGE SP — SPRINT 2 · SISTEMA DE GESTÃO</div>
+    </div>
+
+    <div class="divider" style="margin: 1.25rem 0;"></div>
+
+    <div id="opAlert" class="hidden"></div>
+
+    <form id="opLoginForm" onsubmit="handleOpLogin(event)">
+      <div class="form-group">
+        <label for="opEmail">E-mail do operador</label>
+        <div class="input-wrap">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" id="opEmail" placeholder="operador@evchargesp.com" required/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="opSenha">Senha</label>
+        <div class="input-wrap">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" id="opSenha" placeholder="••••••••" required/>
+        </div>
+      </div>
+
+      <div class="alert alert-info" style="font-size:0.82rem; margin-bottom: 1.25rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Use as mesmas credenciais da plataforma EV Charge SP.
+      </div>
+
+      <button type="submit" class="btn btn-full btn-lg" id="btnOpLogin"
+        style="background: linear-gradient(135deg, var(--purple), #4f46e5); color:#fff; box-shadow: 0 4px 16px rgba(108,99,255,0.3);">
+        Acessar Sistema de Operação
+      </button>
+    </form>
+
+    <div class="divider" style="margin: 1.25rem 0 1rem;"></div>
+    <a href="/" class="btn btn-ghost btn-full" style="font-size:0.85rem;">
+      ← Voltar ao Portal do Usuário
+    </a>
+  </div>
+</div>
+
+<script>
+async function handleOpLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btnOpLogin');
+  const alert = document.getElementById('opAlert');
+  const email = document.getElementById('opEmail').value;
+  const senha = document.getElementById('opSenha').value;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Autenticando...';
+  alert.className = 'hidden';
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Falha na autenticação');
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('portal', 'operador');
+    window.location.href = '/operador/dashboard';
+  } catch (err) {
+    alert.className = 'alert alert-error';
+    alert.innerHTML = '⚠️ ' + err.message;
+    btn.disabled = false;
+    btn.innerHTML = 'Acessar Sistema de Operação';
+  }
+}
+
+// Redirect if already logged in
+if (localStorage.getItem('token')) {
+  window.location.href = '/operador/dashboard';
+}
+</script>
+</body>
+</html>

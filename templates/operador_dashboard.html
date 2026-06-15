@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>EV Charge SP — Operador Sprint 2</title>
+  <meta name="description" content="Sistema de gerenciamento de múltiplas sessões, controle de demanda e tarifação dinâmica."/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/operador.css') }}"/>
+</head>
+<body>
+<div class="bg-grid"></div><div class="bg-glow"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="/operador/dashboard" class="navbar-brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    EV Charge SP
+    <span style="font-size:0.65rem;color:var(--purple);font-weight:600;letter-spacing:0.06em;margin-left:4px;">OPERADOR</span>
+  </a>
+  <div class="navbar-links">
+    <span class="badge-plan" id="navSessionCount" style="background:rgba(108,99,255,0.2);color:var(--purple);border:1px solid var(--purple);">0 sessões</span>
+    <span class="badge-plan" id="navTotalLoad" style="background:rgba(255,209,102,0.2);color:var(--warning);border:1px solid var(--warning);">0 kW</span>
+    <a href="/dashboard" class="btn btn-ghost btn-sm">⚡ Portal Usuário</a>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Sair</button>
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+</nav>
+<div class="nav-overlay" id="navOverlay"></div>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="/dashboard">⚡ Portal Usuário</a>
+  <div class="mobile-divider"></div>
+  <button class="btn btn-ghost" onclick="logout()" style="width:100%;justify-content:flex-start;padding:0.9rem 1.25rem;">🚪 Sair</button>
+</div>
+
+<!-- ENERGY STATUS BAR -->
+<div class="energy-header">
+  <div style="padding:0.6rem 1.5rem;">
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;max-width:1100px;margin:0 auto;">
+      <div style="flex:1;min-width:180px;">
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;">
+          <span style="color:var(--muted);">Grade de Energia</span>
+          <span id="energyLabel" style="font-weight:700;">0 / 88 kW</span>
+        </div>
+        <div class="progress-wrap" style="height:8px;">
+          <div class="progress-bar" id="mainEnergyBar" style="width:0%;transition:width 0.8s;"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;flex-shrink:0;">
+        <span id="energyPct" style="font-size:0.8rem;font-weight:700;color:var(--primary);">0%</span>
+        <span id="energyStatus" class="tag tag-green">Normal</span>
+        <span id="smartBadge" class="tag tag-green">🧠 Inteligente: ON</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+  <div class="container" style="padding-top:1rem;">
+
+    <!-- TABS -->
+    <div class="tabs mb-2" id="opTabs" style="overflow-x:auto;scrollbar-width:none;">
+      <button class="tab active" onclick="switchOpTab('sessoes')" id="tab-btn-sessoes">🚗 Sessões</button>
+      <button class="tab" onclick="switchOpTab('demanda')" id="tab-btn-demanda">⚡ Demanda</button>
+      <button class="tab" onclick="switchOpTab('tarifa')" id="tab-btn-tarifa">💰 Tarifação</button>
+      <button class="tab" onclick="switchOpTab('ocpp')" id="tab-btn-ocpp">📡 OCPP</button>
+      <button class="tab" onclick="switchOpTab('relatorio')" id="tab-btn-relatorio">📊 Relatório</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ TAB: SESSÕES -->
+    <div id="tab-sessoes" class="op-tab-panel">
+      <div class="page-header">
+        <h1>🚗 Sessões de Recarga</h1>
+        <p>Gerencie múltiplos pontos de carregamento simultâneos em tempo real</p>
+      </div>
+
+      <!-- Location Selector -->
+      <div class="card mb-2" style="padding:1rem;">
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <label style="font-size:0.75rem;color:var(--muted);font-weight:600;display:block;margin-bottom:4px;">Vagas do Ponto de Recarga Monitorado</label>
+            <select id="opSelectLocal" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);padding:0.6rem;border-radius:var(--radius);font-weight:600;" onchange="changeOpLocation()">
+              <option value="">Carregando localizações...</option>
+            </select>
+          </div>
+          <button class="btn btn-outline" onclick="syncOpLocationSpots()" style="margin-top:20px;height:42px;">🔄 Recarregar Vagas</button>
+        </div>
+      </div>
+
+      <!-- Spot Grid -->
+      <div class="op-spot-grid" id="spotGrid"></div>
+
+      <!-- Sessions detail table -->
+      <div id="sessionsDetail" class="mt-3"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ TAB: DEMANDA -->
+    <div id="tab-demanda" class="op-tab-panel hidden">
+      <div class="page-header">
+        <h1>⚡ Controle de Demanda Energética</h1>
+        <p>Algoritmo inteligente de distribuição de potência entre sessões ativas</p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span>⚙️</span> Modo de Controle</div>
+          <div style="display:flex;flex-direction:column;gap:1rem;">
+            <div class="demand-mode-card" id="modeIntelligent" onclick="toggleMode(true)" style="border-color:var(--primary);background:rgba(0,212,170,0.08);">
+              <div style="display:flex;align-items:center;gap:0.75rem;">
+                <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🧠</div>
+                <div>
+                  <div style="font-weight:700;font-size:0.95rem;">Modo Inteligente</div>
+                  <div style="font-size:0.78rem;color:var(--muted);">Redistribui potência proporcional quando grade &gt; 90%</div>
+                </div>
+              </div>
+              <div class="tag tag-green mt-1">ATIVO</div>
+            </div>
+            <div class="demand-mode-card" id="modeManual" onclick="toggleMode(false)" style="opacity:0.5;">
+              <div style="display:flex;align-items:center;gap:0.75rem;">
+                <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">⚠️</div>
+                <div>
+                  <div style="font-weight:700;font-size:0.95rem;">Sem Controle</div>
+                  <div style="font-size:0.78rem;color:var(--muted);">Entrega potência total solicitada (pode exceder grade)</div>
+                </div>
+              </div>
+              <div class="tag tag-red mt-1">INATIVO</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span>📊</span> Distribuição de Potência</div>
+          <div id="powerDistributionList">
+            <p class="text-muted" style="font-size:0.85rem;">Nenhuma sessão ativa.</p>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;">
+            <span class="text-muted">Capacidade total da grade:</span>
+            <strong>88 kW</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-top:0.4rem;">
+            <span class="text-muted">Carga atual:</span>
+            <strong id="demandTotalLoad" style="color:var(--primary);">0 kW</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-top:0.4rem;">
+            <span class="text-muted">Reserva disponível:</span>
+            <strong id="demandReserve" style="color:var(--primary);">88 kW</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Algorithm visualization -->
+      <div class="card mt-3">
+        <div class="card-title"><span>🔬</span> Algoritmo de Distribuição</div>
+        <div class="op-algo-box" id="algoViz">
+          <code style="color:var(--muted);font-size:0.82rem;">Nenhuma sessão ativa para visualizar.</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ TAB: TARIFAÇÃO -->
+    <div id="tab-tarifa" class="op-tab-panel hidden">
+      <div class="page-header">
+        <h1>💰 Tarifação Dinâmica</h1>
+        <p>Tarifa calculada dinamicamente por horário, demanda e tipo de veículo</p>
+      </div>
+
+      <div class="grid-2">
+        <!-- Current tariff card -->
+        <div class="card">
+          <div class="card-title"><span>⚡</span> Tarifa Atual</div>
+          <div style="text-align:center;padding:1rem 0;">
+            <div style="font-size:3rem;font-weight:800;color:var(--primary);" id="currentRateDisplay">R$ 0,00</div>
+            <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">/kWh</div>
+            <div class="tag tag-green mt-2" id="currentPeriodTag">Calculando...</div>
+          </div>
+          <div class="divider"></div>
+          <div class="tx-list">
+            <div class="tx-item">
+              <div class="tx-info"><div class="tx-desc">⏰ Fator Horário</div></div>
+              <div id="factorTime" class="tag tag-yellow">—</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-info"><div class="tx-desc">📈 Fator de Demanda</div></div>
+              <div id="factorDemand" class="tag tag-green">×1.00</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-info"><div class="tx-desc">🚗 Calculadora por Veículo</div></div>
+              <div id="factorType" class="tag tag-green">—</div>
+            </div>
+          </div>
+          <!-- Rate calculator -->
+          <div style="margin-top:1rem;">
+            <label style="font-size:0.8rem;font-weight:600;color:var(--muted);">Simular tarifa por tipo de veículo:</label>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;">
+              <button class="btn btn-sm btn-outline" onclick="calcTariff('standard')" id="calcStd">🚗 Compacto ×1.00</button>
+              <button class="btn btn-sm btn-outline" onclick="calcTariff('commercial')" id="calcCom">🚛 Comercial ×1.15</button>
+              <button class="btn btn-sm btn-outline" onclick="calcTariff('premium')" id="calcPre">⭐ Premium ×0.90</button>
+            </div>
+            <div id="calcResult" class="alert alert-info hidden mt-1"></div>
+          </div>
+        </div>
+
+        <!-- 24h schedule -->
+        <div class="card">
+          <div class="card-title"><span>📅</span> Agenda Tarifária 24h</div>
+          <div class="tariff-schedule">
+            <div class="tariff-slot tariff-off" style="flex:6;" title="00h–06h">
+              <div class="tariff-slot-label">Fora Pico</div>
+              <div class="tariff-slot-rate">R$1,20</div>
+              <div class="tariff-slot-hours">00h–06h</div>
+            </div>
+            <div class="tariff-slot tariff-normal" style="flex:6;" title="06h–12h">
+              <div class="tariff-slot-label">Normal</div>
+              <div class="tariff-slot-rate">R$1,80</div>
+              <div class="tariff-slot-hours">06h–12h</div>
+            </div>
+            <div class="tariff-slot tariff-peak" style="flex:2;" title="12h–14h">
+              <div class="tariff-slot-label">Pico</div>
+              <div class="tariff-slot-rate">R$2,50</div>
+              <div class="tariff-slot-hours">12h–14h</div>
+            </div>
+            <div class="tariff-slot tariff-normal" style="flex:4;" title="14h–18h">
+              <div class="tariff-slot-label">Normal</div>
+              <div class="tariff-slot-rate">R$1,80</div>
+              <div class="tariff-slot-hours">14h–18h</div>
+            </div>
+            <div class="tariff-slot tariff-peak" style="flex:4;" title="18h–22h">
+              <div class="tariff-slot-label">Pico</div>
+              <div class="tariff-slot-rate">R$2,50</div>
+              <div class="tariff-slot-hours">18h–22h</div>
+            </div>
+            <div class="tariff-slot tariff-off" style="flex:2;" title="22h–00h">
+              <div class="tariff-slot-label">Fora Pico</div>
+              <div class="tariff-slot-rate">R$1,20</div>
+              <div class="tariff-slot-hours">22h–00h</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem;font-size:0.75rem;">
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#00d4aa;display:inline-block;"></span>Fora de Pico</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#ffd166;display:inline-block;"></span>Normal</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#ff4d6d;display:inline-block;"></span>Pico</span>
+          </div>
+          <div class="alert alert-warning mt-2" style="font-size:0.78rem;">
+            <strong>+20%</strong> aplicado automaticamente quando demanda &gt; 70% da capacidade da grade.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ TAB: OCPP -->
+    <div id="tab-ocpp" class="op-tab-panel hidden">
+      <div class="page-header">
+        <h1>📡 Simulador OCPP 1.6</h1>
+        <p>Protocolo Open Charge Point Protocol — mensagens em tempo real</p>
+      </div>
+      <div class="grid-2">
+        <div class="card" style="grid-column:1/-1;">
+          <div class="card-title" style="justify-content:space-between;">
+            <span><span>📋</span> Log de Mensagens</span>
+            <div style="display:flex;gap:0.5rem;">
+              <button class="btn btn-sm btn-ghost" onclick="sendHeartbeat()">💓 Heartbeat</button>
+              <button class="btn btn-sm btn-ghost" onclick="clearOCPPLog()">🗑️ Limpar</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.75rem;font-size:0.75rem;">
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#6c63ff;display:inline-block;"></span>CALL (cliente→servidor)</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#00d4aa;display:inline-block;"></span>CALLRESULT (servidor→cliente)</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#ff4d6d;display:inline-block;"></span>CALLERROR</span>
+          </div>
+          <div class="ocpp-log" id="ocppLog">
+            <div class="ocpp-entry ocpp-call">
+              <div class="ocpp-meta"><span class="ocpp-dir">⬆ CALL</span><span class="ocpp-action">BootNotification</span><span class="ocpp-time" id="bootTime"></span></div>
+              <pre class="ocpp-payload">[2, "10000", "BootNotification", {"chargePointModel":"EV-Charge-SP-Pro","chargePointVendor":"GoodWe","firmwareVersion":"2.3.1"}]</pre>
+            </div>
+            <div class="ocpp-entry ocpp-result">
+              <div class="ocpp-meta"><span class="ocpp-dir">⬇ CALLRESULT</span><span class="ocpp-action">BootNotification::Response</span><span class="ocpp-time" id="bootTimeR"></span></div>
+              <pre class="ocpp-payload" id="bootResp"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ TAB: RELATÓRIO -->
+    <div id="tab-relatorio" class="op-tab-panel hidden">
+      <div class="page-header">
+        <h1>📊 Relatório de Sessões</h1>
+        <p>Resumo consolidado das sessões gerenciadas nesta operação</p>
+      </div>
+      <div class="stats-grid mb-3">
+        <div class="stat-card"><div class="stat-icon">🔌</div><div class="stat-value" id="repTotalSessions">0</div><div class="stat-label">Sessões Concluídas</div></div>
+        <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-value" id="repTotalEnergy">0 kWh</div><div class="stat-label">Energia Entregue</div></div>
+        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value" id="repTotalRevenue">R$ 0,00</div><div class="stat-label">Receita Total</div></div>
+        <div class="stat-card"><div class="stat-icon">⏱️</div><div class="stat-value" id="repAvgTime">—</div><div class="stat-label">Tempo Médio</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;">
+          <span><span>📋</span> Histórico de Sessões</span>
+          <button class="btn btn-sm btn-outline" onclick="fakeExport()">📥 Exportar CSV</button>
+        </div>
+        <div id="historyTable">
+          <p class="text-muted" style="font-size:0.85rem;text-align:center;padding:2rem;">Nenhuma sessão concluída ainda. Inicie sessões na aba Sessões.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════════ PAYMENT MODAL -->
+<div id="paymentModal" class="pay-modal-overlay hidden" onclick="closeModalOutside(event)">
+  <div class="pay-modal-card">
+
+    <!-- Step indicator -->
+    <div class="steps" id="paySteps" style="margin-bottom:1.5rem;">
+      <div class="step active" id="ps1"><div class="step-num">1</div><span class="step-label">Veículo</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="ps2"><div class="step-num">2</div><span class="step-label">Confirmar</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="ps3"><div class="step-num">3</div><span class="step-label">Conectando</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="ps4"><div class="step-num">4</div><span class="step-label">Ativado</span></div>
+    </div>
+
+    <!-- STEP 1: Vehicle -->
+    <div id="payStep1">
+      <h3 style="margin-bottom:0.25rem;">Novo Carregamento</h3>
+      <p class="text-muted" style="font-size:0.85rem;margin-bottom:1.25rem;">Vaga: <strong id="paySpotId">—</strong></p>
+
+      <div class="form-group">
+        <label>Tipo de Veículo</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem;">
+          <div class="plan-card" id="vt-standard" onclick="selectVehicleType('standard')" style="cursor:pointer;">
+            <div class="plan-icon">🚗</div>
+            <div class="plan-name">Compacto</div>
+            <div class="plan-power" style="font-size:0.8rem;">×1.00</div>
+          </div>
+          <div class="plan-card" id="vt-commercial" onclick="selectVehicleType('commercial')" style="cursor:pointer;">
+            <div class="plan-icon">🚛</div>
+            <div class="plan-name">Comercial</div>
+            <div class="plan-power" style="font-size:0.8rem;">×1.15</div>
+          </div>
+          <div class="plan-card" id="vt-premium" onclick="selectVehicleType('premium')" style="cursor:pointer;">
+            <div class="plan-icon">⭐</div>
+            <div class="plan-name">Premium</div>
+            <div class="plan-power" style="font-size:0.8rem;">×0.90</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Plano de Potência</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem;">
+          <div class="plan-card" id="pp-7" onclick="selectPower(7)" style="cursor:pointer;">
+            <div class="plan-icon">🔋</div>
+            <div class="plan-name">Básico</div>
+            <div class="plan-power">7 kW</div>
+          </div>
+          <div class="plan-card" id="pp-11" onclick="selectPower(11)" style="cursor:pointer;">
+            <div class="plan-icon">⚡</div>
+            <div class="plan-name">Médio</div>
+            <div class="plan-power">11 kW</div>
+          </div>
+          <div class="plan-card" id="pp-22" onclick="selectPower(22)" style="cursor:pointer;">
+            <div class="plan-icon">🚀</div>
+            <div class="plan-name">Premium</div>
+            <div class="plan-power">22 kW</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert-info" id="payTariffPreview" style="font-size:0.82rem;">Selecione veículo e potência para ver o custo estimado.</div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:1rem;">
+        <button class="btn btn-ghost btn-full" onclick="closePayModal()">Cancelar</button>
+        <button class="btn btn-primary btn-full" id="btnPayStep1Next" onclick="goPayStep(2)" disabled>Continuar →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Confirm -->
+    <div id="payStep2" class="hidden">
+      <h3 style="margin-bottom:0.25rem;">Confirmar Inicialização</h3>
+      <p class="text-muted" style="font-size:0.85rem;margin-bottom:1.25rem;">Deseja iniciar a recarga com as seguintes configurações?</p>
+
+      <div class="pay-total-box" id="payTotalBox" style="background:rgba(108,99,255,0.06);border:1px solid rgba(108,99,255,0.2);text-align:left;margin-top:1rem;padding:1rem;border-radius:var(--radius);">
+        <div style="font-size:0.82rem;color:var(--muted);display:flex;flex-direction:column;gap:8px;padding:0.25rem 0.5rem;">
+          <div>• Vaga: <strong id="payConfirmSpotId" style="color:var(--primary);">—</strong></div>
+          <div>• Veículo: <strong id="payConfirmVehicle" style="color:var(--primary);">—</strong></div>
+          <div>• Potência de Recarga: <strong id="payConfirmPower" style="color:var(--primary);">—</strong></div>
+          <div>• Estimativa Custo: <strong id="payConfirmRate" style="color:var(--warning);">—</strong></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+        <button class="btn btn-ghost btn-full" onclick="goPayStep(1)">← Voltar</button>
+        <button class="btn btn-primary btn-full" onclick="processPayment()">🔌 Iniciar Recarga</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Processing -->
+    <div id="payStep3" class="hidden" style="text-align:center;padding:1rem 0;">
+      <div class="charging-orb pay-orb-spin" id="payOrb" style="width:100px;height:100px;font-size:2.5rem;margin:0 auto 1.5rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(0,212,170,0.1);border:3px dashed var(--primary);animation:spin 1.2s linear infinite;">📡</div>
+      <h3 id="payProcessingTitle">Comunicando OCPP...</h3>
+      <p class="text-muted" style="font-size:0.85rem;margin-top:0.5rem;" id="payProcessingMsg">Inicializando canal OCPP 1.6...</p>
+      <div class="progress-wrap mt-2" style="max-width:300px;margin:1rem auto 0;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;">
+        <div class="progress-bar" id="payProgressBar" style="width:0%;height:100%;background:var(--primary);transition:width 0.5s;"></div>
+      </div>
+    </div>
+
+    <!-- STEP 4: Confirmed -->
+    <div id="payStep4" class="hidden" style="text-align:center;padding:1rem 0;">
+      <div style="font-size:4rem;margin-bottom:0.75rem;animation:fadeIn 0.5s ease;">⚡</div>
+      <h3 style="color:var(--primary);">Recarga Inicializada!</h3>
+      <p class="text-muted" style="font-size:0.85rem;margin:0.5rem 0 1.25rem;">O carregador iniciou a recarga do veículo com sucesso.</p>
+      <div class="card" style="text-align:left;margin-bottom:1rem;background:rgba(0,212,170,0.05);border-color:rgba(0,212,170,0.3);padding:1rem;">
+        <div class="tx-list" id="payReceipt"></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="closePayModal()">Fechar</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+<script src="{{ url_for('static', filename='js/operador_dashboard.js') }}"></script>
+</body>
+</html>

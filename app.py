@@ -111,6 +111,16 @@ def reservas_page():
     return render_template('reservas.html')
 
 
+@app.route('/operador')
+def operador_login():
+    return render_template('operador.html')
+
+
+@app.route('/operador/dashboard')
+def operador_dashboard():
+    return render_template('operador_dashboard.html')
+
+
 # ─── AUTH ────────────────────────────────────────────────────────────────────────
 @app.route('/api/register', methods=['POST'])
 def register():

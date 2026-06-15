@@ -6,6 +6,56 @@
   <title>EV Charge SP — Meu Perfil</title>
   <meta name="description" content="Gerencie seu perfil, créditos e plano no EV Charge SP."/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <style>
+    /* MODAL ESTILOS DE PAGAMENTO */
+    .pay-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      animation: fadeIn 0.25s ease;
+    }
+    .pay-modal-overlay.hidden { display: none; }
+    .pay-modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      width: 100%;
+      max-width: 440px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .steps { display: flex; align-items: center; justify-content: center; }
+    .step { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .step-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; color: var(--muted);
+      transition: all 0.3s;
+    }
+    .step.active .step-num { background: var(--primary); border-color: var(--primary); color: #000; }
+    .step.done .step-num { background: rgba(0,212,170,0.15); border-color: var(--primary); color: var(--primary); }
+    .step-label { font-size: 0.65rem; color: var(--muted); font-weight: 600; }
+    .step.active .step-label { color: var(--primary); }
+    .step-line { flex: 1; height: 2px; background: var(--border); min-width: 20px; max-width: 50px; }
+    
+    .pay-orb-spin { animation: spin 1.2s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
 <div class="bg-grid"></div><div class="bg-glow"></div>
@@ -119,6 +169,82 @@
     </div>
   </div>
 </main>
+
+<!-- MODAL DE PAGAMENTO PARA ADICIONAR CRÉDITOS -->
+<div id="creditPaymentModal" class="pay-modal-overlay hidden" onclick="closeModalOutside(event)">
+  <div class="pay-modal-card">
+    
+    <!-- Indicador de Passos -->
+    <div class="steps" id="paySteps" style="margin-bottom:1.5rem;">
+      <div class="step active" id="ps1"><div class="step-num">1</div><span class="step-label">Cartão</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="ps2"><div class="step-num">2</div><span class="step-label">Aprovando</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="ps3"><div class="step-num">3</div><span class="step-label">Concluído</span></div>
+    </div>
+
+    <!-- PASSO 1: Cartão -->
+    <div id="payStep1">
+      <h3 style="margin-bottom:0.25rem;color:var(--text);">Adicionar Crédito</h3>
+      <p class="text-muted" style="font-size:0.85rem;margin-bottom:1.25rem;">Valor selecionado: <strong id="payCreditVal" style="color:var(--primary);">R$ 0,00</strong></p>
+
+      <div class="form-group">
+        <label>Número do Cartão</label>
+        <div class="input-wrap">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          <input type="text" id="cardNumber" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCard(this)"/>
+        </div>
+        <div id="cardBrand" style="font-size:0.75rem;color:var(--primary);margin-top:3px;font-weight:600;"></div>
+      </div>
+      <div class="form-group">
+        <label>Nome no Cartão</label>
+        <input type="text" id="cardName" placeholder="NOME DO TITULAR" style="text-transform:uppercase;"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-group">
+          <label>Validade (MM/AA)</label>
+          <input type="text" id="cardExpiry" placeholder="MM/AA" maxlength="5" oninput="formatExpiry(this)"/>
+        </div>
+        <div class="form-group">
+          <label>CVV</label>
+          <input type="text" id="cardCvv" placeholder="•••" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')"/>
+        </div>
+      </div>
+
+      <div class="pay-total-box" style="margin-top:1.25rem;background:rgba(0,212,170,0.05);border:1px solid rgba(0,212,170,0.2);padding:1rem;border-radius:var(--radius);text-align:center;">
+        <div style="font-size:0.8rem;color:var(--muted);">Total a pagar</div>
+        <div style="font-size:1.8rem;font-weight:800;color:var(--primary);" id="payTotalFinal">R$ 0,00</div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:1.25rem;">
+        <button class="btn btn-ghost btn-full" onclick="closePayModal()">Cancelar</button>
+        <button class="btn btn-primary btn-full" onclick="processPayment()">💳 Pagar Agora</button>
+      </div>
+    </div>
+
+    <!-- PASSO 2: Processando -->
+    <div id="payStep2" class="hidden" style="text-align:center;padding:1.5rem 0;">
+      <div class="charging-orb pay-orb-spin" id="payOrb" style="width:70px;height:70px;font-size:2.2rem;margin:0 auto 1.5rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(0,212,170,0.1);border:3px dashed var(--primary);animation:spin 1.2s linear infinite;">⏳</div>
+      <h3>Processando Pagamento...</h3>
+      <p class="text-muted" style="font-size:0.85rem;margin-top:0.5rem;" id="payProcessingMsg">Conectando com o banco...</p>
+      <div class="progress-wrap mt-2" style="max-width:300px;margin:1.25rem auto 0;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;">
+        <div class="progress-bar" id="payProgressBar" style="width:0%;height:100%;background:var(--primary);transition:width 0.5s;"></div>
+      </div>
+    </div>
+
+    <!-- PASSO 3: Confirmado -->
+    <div id="payStep3" class="hidden" style="text-align:center;padding:1.5rem 0;">
+      <div style="font-size:4rem;margin-bottom:0.75rem;">✅</div>
+      <h3 style="color:var(--primary);">Pagamento Aprovado!</h3>
+      <p class="text-muted" style="font-size:0.85rem;margin:0.5rem 0 1.5rem;">Os créditos foram adicionados à sua conta.</p>
+      <div class="card" style="text-align:left;margin-bottom:1.5rem;background:rgba(0,212,170,0.04);border-color:rgba(0,212,170,0.2);padding:1rem;">
+        <div class="tx-list" id="payReceipt"></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="closePayModal()">Concluir</button>
+    </div>
+
+  </div>
+</div>
 
 <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
 <script src="{{ url_for('static', filename='js/perfil.js') }}"></script>
