@@ -31,13 +31,15 @@ max_history = 20 mensagens    # ~10 trocas por sessão
 
 ## 🚀 Funcionalidades do Sistema
 
-- **Autenticação:** Login e cadastro com criptografia Bcrypt + sessões JWT.
-- **Gestão de Créditos:** Adição de saldo para pagamento de recargas.
+- **Autenticação:** Login e cadastro com criptografia Bcrypt + sessões JWT (disponível para portal do usuário e do operador).
+- **Gestão de Créditos:** Checkout simulado com cartão de crédito direto na conta do usuário (Meu Perfil).
 - **Planos Customizados:** Básico (7kW) | Intermediário (11kW) | Premium (22kW).
 - **Mapa de Vagas:** Seleção de vagas em tempo real por região de SP.
 - **Simulador de Recarga:** Monitoramento visual do progresso e energia consumida.
 - **Reservas Inteligentes:** Agendamento gratuito com política de multa por no-show (R$ 15,00).
 - **Assistente IA:** Chat contextualizado com memória de conversa e dados reais da conta.
+- **Portal de Operação (Sprint 2):** Controle de múltiplas vagas, simulador de protocolo OCPP 1.6 integrado, relatórios consolidados em tempo real com exportação para CSV.
+- **Controle de Demanda Inteligente (Sprint 2):** Algoritmo proporcional inteligente que redistribui dinamicamente a potência das vagas ativas para limitar o consumo total da grade de energia a 88 kW.
 
 ---
 
@@ -233,15 +235,20 @@ Sprint-de-ia/
 │
 ├── static/
 │   ├── css/                    # Estilos (dark theme premium)
+│   │   ├── style.css           # Estilos principais do portal do usuário
+│   │   └── operador.css        # Estilos específicos do portal do operador
 │   └── js/
-│       └── ia.js               # Frontend do chatbot com memória
+│       ├── ia.js               # Frontend do chatbot com memória
+│       └── operador_dashboard.js # Frontend interativo do portal do operador
 │
 ├── templates/
 │   ├── index.html              # Página de login/cadastro
-│   ├── dashboard.html          # Dashboard principal
-│   ├── recarga.html            # Simulador de recarga
+│   ├── dashboard.html          # Dashboard principal do usuário
+│   ├── recarga.html            # Simulador de recarga do usuário
 │   ├── ia.html                 # Interface do chatbot
-│   └── reservas.html           # Gestão de reservas
+│   ├── reservas.html           # Gestão de reservas
+│   ├── operador.html           # Login do operador
+│   └── operador_dashboard.html # Painel do operador
 │
 ├── README.md                   # Este arquivo
 ├── logic_explanation.md        # Explicação técnica do sistema
@@ -253,13 +260,14 @@ Sprint-de-ia/
 
 ## 🎥 Vídeo de Demonstração
 
-> 📹 Link do vídeo: **[A ser adicionado após gravação]**
+> 📹 Link do vídeo: **[Assistir no YouTube](https://youtu.be/eXm0Qe1OApM?si=3DxuA_cJhnyhCda_)**
 
 O vídeo demonstra:
 1. Login no sistema e acesso ao assistente
 2. Consulta de saldo e histórico de recargas (context injection)
 3. Diálogo multi-turno mostrando a memória de conversa
 4. Teste de escopo com pergunta fora do tema (GoodWe EV Challenge)
+5. Demonstração completa do **Portal do Operador (Sprint 2)**, incluindo o simulador OCPP, algoritmo de demanda proporcional inteligente e relatórios.
 
 ---
 
@@ -267,9 +275,11 @@ O vídeo demonstra:
 
 | Nome | RM |
 |---|---|
-| [Nome 1] | [RM] |
-| [Nome 2] | [RM] |
-| [Nome 3] | [RM] |
+| Miguel Putini | RM: 571624 |
+| Júlia Konishi | RM: 569506 |
+| Alexandre Rizzi | RM: 569621 |
+| João vitor Giadans | RM: 571608 |
+| João Victor Scheren | RM: 568883 |
 
 ---
 
