@@ -283,4 +283,4 @@ O vídeo demonstra:
 
 ---
 
-*Desenvolvido para o Sprint de IA — FIAP · 2026*
+*Desenvolvido para o Sprint — FIAP · 2026*
